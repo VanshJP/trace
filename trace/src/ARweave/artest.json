@@ -1,0 +1,33 @@
+{
+    "title": "Example Data",
+    "description": "This is an example JSON file to be encrypted and stored on Arweave",
+    "timestamp": "2025-04-05T12:00:00Z",
+    "metadata": {
+        "author": "User",
+        "version": "1.0.0",
+        "tags": [
+            "arweave",
+            "encryption",
+            "blockchain",
+            "storage"
+        ]
+    },
+    "data": {
+        "message": "This is secure data that will be encrypted",
+        "numbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+        ],
+        "isConfidential": true,
+        "nestedObject": {
+            "key1": "value1",
+            "key2": "value2",
+            "subNested": {
+                "subKey1": "subValue1"
+            }
+        }
+    }
+}
