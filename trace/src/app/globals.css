@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+.input-field {
+  @apply text-gray-900 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#228c22] focus:border-transparent;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

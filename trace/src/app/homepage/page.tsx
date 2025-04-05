@@ -1,16 +1,31 @@
 "use client";
 
 import React, { useState } from 'react';
-import LoginModal from './LoginModal';
+import LoginModal from '../LoginModal';
+import { useRouter } from 'next/navigation';
+import TranscriptUploader from '../components/TranscriptUploader';
 import Image from 'next/image';
 
 const HomePage: React.FC = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [userType, setUserType] = useState<string>('');
 
+    const router = useRouter();
+
     const handleNavigation = (type: string) => {
-        setUserType(type);
-        setShowLogin(true);
+        switch(type) {
+            case 'student':
+                router.push('/student');
+                break;
+            case 'university':
+                router.push('/university');
+                break;
+            case 'company':
+                router.push('/company');
+                break;
+            default:
+                break;
+        }
     };
 
     return (
@@ -23,6 +38,7 @@ const HomePage: React.FC = () => {
                             <img
                                 src="/TRACELOGO.png"
                                 className="h-10 w-auto"
+                                alt="Trace"
                             />
                             <span className="ml-2 text-3xl font-bold text-[#228c22]">Trace</span>
                         </div>
@@ -78,11 +94,10 @@ const HomePage: React.FC = () => {
             {showLogin && <LoginModal userType={userType} onClose={() => setShowLogin(false)} />}
 
             {/* Hero Section */}
-            {/* Hero Section */}
             <div className="relative bg-white overflow-hidden">
                 <div className="max-w-7xl mx-auto">
-                    <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:w-full lg:pb-28 xl:pb-32">
-                        <main className="mt-10 mx-auto px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28 flex flex-col items-center text-center">
+                    <div className="relative z-10 pb-16 bg-white sm:pb-40 md:pb-52 lg:pb-60 xl:pb-16">
+                        <main className="mt-10 mx-auto px-4 sm:mt-14 sm:px-6 md:mt-20 lg:mt-24 lg:px-8 xl:mt-28 flex flex-col items-center text-center min-h-[80vh]">
                             <h1 className="text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl leading-tight">
                                 <span className="block xl:inline">Facts.</span>{' '}
                                 <span className="block text-[#228c22] italic xl:inline">Locked In.</span>
@@ -92,10 +107,11 @@ const HomePage: React.FC = () => {
                                 <span className="block text-[#e81f17] italic xl:inline">Locked Out.</span>
                             </h1>
 
-                            <p className="mt-3 text-xl text-gray-500 sm:mt-5 sm:text-2xl max-w-xl md:mt-5 md:text-2xl">
+                            <p className="mt-6 text-xl text-gray-500 sm:mt-10 sm:text-2xl max-w-xl md:text-2xl">
                                 Trace revolutionizes how academic credentials are verified. Immutable, secure, and instantly verifiable, eliminating the need for university registrars as middlemen.
                             </p>
-                            <div className="mt-10 flex flex-wrap justify-center gap-4">
+
+                            <div className="mt-12 flex flex-wrap justify-center gap-4">
                                 <a
                                     href="#how-it-works"
                                     className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#228c22] hover:bg-[#1c7a1c]"
@@ -109,12 +125,11 @@ const HomePage: React.FC = () => {
                                     Learn More
                                 </a>
                             </div>
-
-
                         </main>
                     </div>
                 </div>
             </div>
+
 
 
             {/* How It Works Section */}
@@ -125,9 +140,15 @@ const HomePage: React.FC = () => {
                         <p className="mt-2 text-4xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-5xl">
                             Blockchain-powered credential verification
                         </p>
-                        <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                        <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto mb-16">
                             Our platform leverages Ethereum blockchain technology to create immutable, trustworthy academic records
                         </p>
+
+                        <div className="py-16 bg-white" id="verify-transcript">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <TranscriptUploader />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="mt-16">

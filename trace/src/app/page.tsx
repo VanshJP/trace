@@ -1,7 +1,7 @@
-import HomePage from './pages/Homepage';
+"use client";
 
-const Index = () => {
+import HomePage from './homepage/page';
+
+export default function Home() {
   return <HomePage />;
-};
-
-export default Index;
+}
