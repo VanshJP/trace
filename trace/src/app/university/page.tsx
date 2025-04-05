@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import TranscriptUploader from "../components/TranscriptUploader";
+import Arweave from 'arweave';
+import * as crypto from 'crypto';
+import { registerStudent } from "../registerUser";
 
 // Define types for our data
 interface Class {
@@ -16,7 +19,22 @@ interface Student {
   gpa: string;
   studentEmail: string;
   classes: Class[];
+  transactionId?: string;
+  encryptionKey?: string;
 }
+
+// Encryption Configuration
+const ALGORITHM = 'aes-256-gcm';
+const KEY_BYTES = 32; // 256 bits
+const IV_BYTES = 12; // Standard for GCM
+const AUTH_TAG_BYTES = 16; // Standard for GCM
+
+// Initialize Arweave
+const arweave = Arweave.init({
+  host: 'arweave.net',
+  port: 443,
+  protocol: 'https'
+});
 
 const UniversityPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -52,9 +70,24 @@ const UniversityPage: React.FC = () => {
     },
   ]);
 
-  // New state for JSON file data and URL
+  // State for JSON file data, URL, and blockchain status
   const [jsonData, setJsonData] = useState<string | null>(null);
   const [jsonFileUrl, setJsonFileUrl] = useState<string | null>(null);
+  const [isEncrypting, setIsEncrypting] = useState<boolean>(false);
+  const [encryptionStatus, setEncryptionStatus] = useState<string>("");
+  const [walletKey, setWalletKey] = useState<any>(null);
+
+  // Load wallet key from local storage
+  React.useEffect(() => {
+    try {
+      const storedWallet = localStorage.getItem('arweaveWallet');
+      if (storedWallet) {
+        setWalletKey(JSON.parse(storedWallet));
+      }
+    } catch (error) {
+      console.error("Failed to load wallet:", error);
+    }
+  }, []);
 
   const handleTranscriptData = (data: any) => {
     console.log("Transcript data received:", data);
@@ -72,9 +105,9 @@ const UniversityPage: React.FC = () => {
         studentEmail: data.studentEmail || "",
         classes: Array.isArray(data.recentCourses)
           ? data.recentCourses.map((cls: any) => ({
-              classCode: cls.courseCode || "",
-              grade: cls.grade || "",
-            }))
+            classCode: cls.courseCode || "",
+            grade: cls.grade || "",
+          }))
           : [],
       };
 
@@ -82,6 +115,37 @@ const UniversityPage: React.FC = () => {
       setShowClassesForm(true);
     }
   };
+
+  // This function would be added to the UniversityPage.tsx
+const registerNewStudent = async () => {
+  if (!formData.studentEmail) {
+    setEncryptionStatus("Student email is required for registration");
+    return;
+  }
+
+  try {
+    // Get the university ID for the current university rep
+    // This would ideally come from your authentication context
+    // For demonstration, we're hard-coding a universityId
+    const universityId = "your-university-id"; // You'll need to get this from your auth context
+    
+    // Register the student using the Firebase method
+    const result = await registerStudent(formData.studentEmail, universityId);
+    
+    // Store in localStorage for the email link authentication
+    localStorage.setItem('emailForSignIn', formData.studentEmail);
+    
+    // Show success message
+    setEncryptionStatus(`Student registration email sent: ${result}`);
+    
+    // Student data to include the transactionId will be updated when they complete sign-up
+    // For now, we can continue with the Arweave storage if needed
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    setEncryptionStatus(`Error registering student: ${errorMessage}`);
+  }
+};
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -129,31 +193,175 @@ const UniversityPage: React.FC = () => {
     });
   };
 
-  const handleSaveStudent = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Wallet Upload Handler
+  const handleWalletUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.studentId ||
-      !formData.gpa ||
-      !formData.studentEmail
-    ) {
-      alert("Please fill in all required fields");
-      return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const walletData = event.target?.result as string;
+        const jwk = JSON.parse(walletData);
+        setWalletKey(jwk);
+        localStorage.setItem('arweaveWallet', walletData);
+
+        // Get wallet address for display
+        const address = await arweave.wallets.jwkToAddress(jwk);
+        setEncryptionStatus(`Wallet loaded. Address: ${address}`);
+      } catch (error) {
+        setEncryptionStatus(`Error parsing wallet: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Generate Encryption Key
+  const generateKey = () => {
+    const key = crypto.randomBytes(KEY_BYTES);
+    return key;
+  };
+
+  // Encrypt function
+  const encryptData = (data: Buffer, key: Buffer) => {
+    const iv = crypto.randomBytes(IV_BYTES);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    const encryptedData = Buffer.concat([cipher.update(data), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    return { iv, encryptedData, authTag };
+  };
+
+  // Verify transaction exists on Arweave
+  const verifyTransaction = async (txId: string): Promise<boolean> => {
+    setEncryptionStatus(`Verifying transaction ${txId} on Arweave network...`);
+
+    try {
+      // Try to get transaction directly from Arweave
+      const tx = await arweave.transactions.get(txId);
+
+      if (tx && tx.id) {
+        setEncryptionStatus(`✅ Transaction verified on Arweave network: ${txId}`);
+        return true;
+      } else {
+        setEncryptionStatus(`⚠️ Transaction ${txId} not found on Arweave yet. It may still be processing.`);
+        return false;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setEncryptionStatus(`⚠️ Could not verify transaction: ${errorMessage}`);
+      return false;
+    }
+  };
+
+  // Encrypt and upload student data to Arweave
+  const encryptAndUploadToArweave = async (studentData: Student) => {
+    if (!walletKey) {
+      setEncryptionStatus("No wallet loaded. Please upload an Arweave wallet.");
+      return null;
+    }
+
+    setIsEncrypting(true);
+    setEncryptionStatus("Encrypting and uploading student data to Arweave...");
+
+    try {
+      // Generate encryption key
+      const key = generateKey();
+      const keyHex = key.toString('hex');
+
+      // Prepare data
+      const originalDataBuffer = Buffer.from(JSON.stringify(studentData));
+
+      // Encrypt the data
+      const { iv, encryptedData: encryptedBuffer, authTag } = encryptData(originalDataBuffer, key);
+      const dataToUpload = Buffer.concat([iv, authTag, encryptedBuffer]);
+
+      // Create and prepare the transaction
+      const transaction = await arweave.createTransaction({ data: dataToUpload }, walletKey);
+
+      transaction.addTag('Content-Type', 'application/octet-stream');
+      transaction.addTag('App-Name', 'TraceUniversityPortal');
+      transaction.addTag('Encryption-Algorithm', ALGORITHM);
+      transaction.addTag('Student-ID', studentData.studentId);
+      transaction.addTag('Timestamp', new Date().toISOString());
+
+      // Sign the transaction
+      await arweave.transactions.sign(transaction, walletKey);
+
+      // Upload the transaction
+      const uploader = await arweave.transactions.getUploader(transaction);
+
+      while (!uploader.isComplete) {
+        await uploader.uploadChunk();
+        setEncryptionStatus(`${uploader.pctComplete}% uploaded`);
+      }
+
+      setEncryptionStatus(`Upload successful! Transaction ID: ${transaction.id}`);
+
+      // Verify the transaction
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      await verifyTransaction(transaction.id);
+
+      // Return the transaction ID and encryption key
+      return {
+        transactionId: transaction.id,
+        encryptionKey: keyHex
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setEncryptionStatus(`Error during encryption/upload: ${errorMessage}`);
+      return null;
+    } finally {
+      setIsEncrypting(false);
+    }
+  };
+
+  // Modification to the handleSaveStudent function in UniversityPage.tsx
+const handleSaveStudent = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (
+    !formData.firstName ||
+    !formData.lastName ||
+    !formData.studentId ||
+    !formData.gpa ||
+    !formData.studentEmail
+  ) {
+    alert("Please fill in all required fields");
+    return;
+  }
+
+  setIsEncrypting(true);
+  
+  try {
+    // First register the student in Firebase to generate the transaction ID
+    await registerNewStudent();
+    
+    // First create JSON for download
+    const studentJson = JSON.stringify(formData, null, 2);
+    const blob = new Blob([studentJson], { type: "application/json" });
+    const fileUrl = URL.createObjectURL(blob);
+    setJsonData(studentJson);
+    setJsonFileUrl(fileUrl);
+
+    // Now encrypt and upload to Arweave if wallet is available
+    let newStudent = { ...formData };
+
+    if (walletKey) {
+      const result = await encryptAndUploadToArweave(formData);
+
+      if (result) {
+        newStudent = {
+          ...formData,
+          transactionId: result.transactionId,
+          encryptionKey: result.encryptionKey
+        };
+      }
+    } else {
+      setEncryptionStatus("No Arweave wallet loaded. Student data was not encrypted or stored on blockchain.");
     }
 
     // Add new student to the records
-    setStudents([...students, { ...formData }]);
-
-    // Create a JSON string from the student data
-    const studentJson = JSON.stringify(formData, null, 2);
-    // Create a blob and generate a URL for download
-    const blob = new Blob([studentJson], { type: "application/json" });
-    const fileUrl = URL.createObjectURL(blob);
-    // Save the JSON data and URL in state
-    setJsonData(studentJson);
-    setJsonFileUrl(fileUrl);
+    setStudents([...students, newStudent]);
 
     // Clear the form for new input
     setFormData({
@@ -166,7 +374,12 @@ const UniversityPage: React.FC = () => {
     });
 
     setShowModal(true);
-  };
+  } catch (error) {
+    setEncryptionStatus(`Error: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    setIsEncrypting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white">
@@ -191,10 +404,43 @@ const UniversityPage: React.FC = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        <div className="py-16 bg-white" id="verify-transcript">
+        <div className="py-8 bg-white" id="verify-transcript">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <TranscriptUploader onParsed={handleTranscriptData} />
           </div>
+        </div>
+
+        {/* Arweave Wallet Section */}
+        <div className="bg-gray-50 p-8 rounded-lg shadow-sm border border-gray-100">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-4">
+            Blockchain Encryption Configuration
+          </h2>
+          <p className="mb-4 text-gray-600">
+            Upload an Arweave wallet to enable encrypted blockchain storage of student data.
+          </p>
+
+          <div className="mb-4">
+            <label htmlFor="walletUpload" className="block text-sm font-medium text-gray-700 mb-1">
+              Select Arweave Wallet (JWK)
+            </label>
+            <input
+              id="walletUpload"
+              type="file"
+              onChange={handleWalletUpload}
+              className="border border-gray-300 px-4 py-2 rounded-md focus:ring-[#228c22] focus:border-[#228c22] focus:outline-none"
+            />
+            {walletKey && (
+              <div className="mt-2 text-sm bg-green-100 p-2 rounded">
+                Arweave wallet loaded and ready for encryption
+              </div>
+            )}
+          </div>
+
+          {encryptionStatus && (
+            <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-sm">
+              {encryptionStatus}
+            </div>
+          )}
         </div>
 
         <div className="bg-gray-50 p-8 rounded-lg shadow-sm border border-gray-100">
@@ -259,7 +505,7 @@ const UniversityPage: React.FC = () => {
                   htmlFor="gpa"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  GPA
+                  GPA *
                 </label>
                 <input
                   id="gpa"
@@ -277,7 +523,7 @@ const UniversityPage: React.FC = () => {
                   htmlFor="studentEmail"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Student Email
+                  Student Email *
                 </label>
                 <input
                   id="studentEmail"
@@ -394,9 +640,10 @@ const UniversityPage: React.FC = () => {
 
             <button
               type="submit"
-              className="inline-flex h-10 items-center justify-center rounded-md bg-[#228c22] px-8 text-sm font-medium text-white shadow transition-colors hover:bg-[#1c7a1c]"
+              disabled={isEncrypting}
+              className="inline-flex h-10 items-center justify-center rounded-md bg-[#228c22] px-8 text-sm font-medium text-white shadow transition-colors hover:bg-[#1c7a1c] disabled:bg-gray-400"
             >
-              Save Student
+              {isEncrypting ? "Encrypting & Saving..." : "Save Student"}
             </button>
           </form>
         </div>
@@ -434,6 +681,9 @@ const UniversityPage: React.FC = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Classes
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Blockchain Data
                   </th>
                 </tr>
               </thead>
@@ -495,6 +745,41 @@ const UniversityPage: React.FC = () => {
                           )}
                         </div>
                       </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-500">
+                          {student.transactionId ? (
+                            <details>
+                              <summary className="cursor-pointer text-[#228c22]">
+                                Blockchain Secured
+                              </summary>
+                              <div className="mt-2 space-y-2">
+                                <p>
+                                  <strong>Transaction ID:</strong>
+                                  <br />
+                                  <span className="text-xs break-all">{student.transactionId}</span>
+                                </p>
+                                <p>
+                                  <strong>Encryption Key:</strong>
+                                  <br />
+                                  <span className="text-xs break-all">{student.encryptionKey}</span>
+                                </p>
+                                <p>
+                                  <a
+                                    href={`https://viewblock.io/arweave/tx/${student.transactionId}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    View on Arweave
+                                  </a>
+                                </p>
+                              </div>
+                            </details>
+                          ) : (
+                            "Not encrypted"
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
               </tbody>
@@ -534,29 +819,38 @@ const UniversityPage: React.FC = () => {
             <p className="text-gray-500 mb-4">
               Student has been successfully added to the system.
             </p>
-            {jsonData && jsonFileUrl && (
-              <div className="mb-4 text-left">
+
+            {/* Display blockchain status if available */}
+            {students[students.length - 1]?.transactionId && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-100 rounded text-left">
                 <h4 className="text-lg font-medium text-gray-800 mb-2">
-                  Student Data (JSON)
+                  Blockchain Storage Status
                 </h4>
-                <pre className="bg-gray-100 p-2 rounded text-xs text-gray-700 overflow-auto max-h-48">
-                  {jsonData}
-                </pre>
-                <a
-                  href={jsonFileUrl}
-                  download="studentData.json"
-                  className="mt-2 inline-flex items-center justify-center rounded-md bg-[#228c22] px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-[#1c7a1c]"
-                >
-                  Download JSON
-                </a>
+                <p className="text-sm text-gray-600 mb-2">
+                  Student data has been encrypted and stored on the Arweave blockchain.</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>Transaction ID:</strong><br />
+                  <span className="text-xs break-all">{students[students.length - 1].transactionId}</span>
+                </p>
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>Encryption Key:</strong><br />
+                  <span className="text-xs break-all">{students[students.length - 1].encryptionKey}</span>
+                </p>
+                <p className="text-sm text-gray-600">
+                  <a
+                    href={`https://viewblock.io/arweave/tx/${students[students.length - 1].transactionId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View on Arweave
+                  </a>
+                </p>
               </div>
             )}
+
             <button
-              onClick={() => {
-                // Revoke the URL when closing the modal if necessary
-                if (jsonFileUrl) URL.revokeObjectURL(jsonFileUrl);
-                setShowModal(false);
-              }}
+              onClick={() => setShowModal(false)}
               className="inline-flex h-10 items-center justify-center rounded-md bg-[#228c22] px-8 text-sm font-medium text-white shadow transition-colors hover:bg-[#1c7a1c]"
             >
               Close

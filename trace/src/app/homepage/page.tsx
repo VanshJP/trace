@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import LoginModal from '../LoginModal';
 import { useRouter } from 'next/navigation';
+import { registerStudent } from '../registerUser';
 import TranscriptUploader from '../components/TranscriptUploader';
 import Image from 'next/image';
 
@@ -42,6 +43,9 @@ const HomePage: React.FC = () => {
                             />
                             <span className="ml-2 text-3xl font-bold text-[#228c22]">Trace</span>
                         </div>
+                        <button onClick={() => registerStudent("test@email.com", "actual_university_id")}>
+  Test Student Register
+</button>
                         <div className="flex items-center pr-0">
                             <button
                                 onClick={() => handleNavigation('university')}

@@ -38,10 +38,11 @@ export default function UniversityRegistration() {
             }
 
             // Register the university representative with Firebase
-            // Only passing email and password - not the university name
+            // Pass university name now
             await registerUniversityRep(
                 formData.email, 
-                formData.password
+                formData.password,
+                formData.universityName
             )
             
             setSuccessMessage("Registration successful! Redirecting to dashboard...")

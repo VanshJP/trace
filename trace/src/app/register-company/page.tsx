@@ -38,10 +38,11 @@ export default function CompanyRegistration() {
             }
 
             // Register the company representative with Firebase
-            // Only passing email and password - not the company name
+            // Pass company name now
             await registerCompanyRep(
                 formData.email, 
-                formData.password
+                formData.password,
+                formData.companyName
             )
             
             setSuccessMessage("Registration successful! Redirecting to dashboard...")
