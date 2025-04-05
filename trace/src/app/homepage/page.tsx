@@ -15,13 +15,13 @@ const HomePage: React.FC = () => {
     const handleNavigation = (type: string) => {
         switch(type) {
             case 'student':
-                router.push('/student');
+                router.push('/register-student');
                 break;
             case 'university':
-                router.push('/university');
+                router.push('/register-university');
                 break;
             case 'company':
-                router.push('/company');
+                router.push('/register-company');
                 break;
             default:
                 break;
@@ -44,12 +44,6 @@ const HomePage: React.FC = () => {
                         </div>
                         <div className="flex items-center pr-0">
                             <button
-                                onClick={() => handleNavigation('student')}
-                                className="ml-3 bg-white text-[#228c22] hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium border border-[#228c22]"
-                            >
-                                I'm A Student
-                            </button>
-                            <button
                                 onClick={() => handleNavigation('university')}
                                 className="ml-3 bg-white text-[#228c22] hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium border border-[#228c22]"
                             >
@@ -57,9 +51,15 @@ const HomePage: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => handleNavigation('company')}
-                                className="ml-3 bg-[#228c22] text-white hover:bg-[#1c7a1c] px-4 py-2 rounded-md text-sm font-medium"
+                                className="ml-3 bg-white text-[#228c22] hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium border border-[#228c22]"
                             >
                                 I'm A Company Representative
+                            </button>
+                            <button
+                                onClick={() => setShowLogin(true)}
+                                className="ml-3 bg-[#228c22] text-white hover:bg-[#1c7a1c] px-4 py-2 rounded-md text-sm font-medium border border-[#228c22]"
+                            >
+                                Login
                             </button>
                         </div>
                     </div>
@@ -83,7 +83,7 @@ const HomePage: React.FC = () => {
                     </button>
                     <button
                         onClick={() => handleNavigation('company')}
-                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-[#228c22] hover:bg-[#1c7a1c]"
+                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#228c22] hover:bg-gray-50"
                     >
                         I'm A Company Representative
                     </button>
@@ -91,7 +91,7 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Show Login Modal if needed */}
-            {showLogin && <LoginModal userType={userType} onClose={() => setShowLogin(false)} />}
+            {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
 
             {/* Hero Section */}
             <div className="relative bg-white overflow-hidden">
