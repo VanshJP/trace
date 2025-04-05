@@ -6,6 +6,7 @@ import Arweave from 'arweave';
 import * as crypto from 'crypto';
 import { registerStudent } from "../registerUser";
 
+
 // Define types for our data
 interface Class {
   classCode: string;
@@ -115,37 +116,7 @@ const UniversityPage: React.FC = () => {
       setShowClassesForm(true);
     }
   };
-
-  // This function would be added to the UniversityPage.tsx
-const registerNewStudent = async () => {
-  if (!formData.studentEmail) {
-    setEncryptionStatus("Student email is required for registration");
-    return;
-  }
-
-  try {
-    // Get the university ID for the current university rep
-    // This would ideally come from your authentication context
-    // For demonstration, we're hard-coding a universityId
-    const universityId = "your-university-id"; // You'll need to get this from your auth context
-    
-    // Register the student using the Firebase method
-    const result = await registerStudent(formData.studentEmail, universityId);
-    
-    // Store in localStorage for the email link authentication
-    localStorage.setItem('emailForSignIn', formData.studentEmail);
-    
-    // Show success message
-    setEncryptionStatus(`Student registration email sent: ${result}`);
-    
-    // Student data to include the transactionId will be updated when they complete sign-up
-    // For now, we can continue with the Arweave storage if needed
-    
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    setEncryptionStatus(`Error registering student: ${errorMessage}`);
-  }
-};
+  
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -316,70 +287,50 @@ const registerNewStudent = async () => {
   };
 
   // Modification to the handleSaveStudent function in UniversityPage.tsx
-const handleSaveStudent = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  if (
-    !formData.firstName ||
-    !formData.lastName ||
-    !formData.studentId ||
-    !formData.gpa ||
-    !formData.studentEmail
-  ) {
-    alert("Please fill in all required fields");
-    return;
-  }
-
-  setIsEncrypting(true);
+  const handleSaveStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
   
-  try {
-    // First register the student in Firebase to generate the transaction ID
-    await registerNewStudent();
-    
-    // First create JSON for download
-    const studentJson = JSON.stringify(formData, null, 2);
-    const blob = new Blob([studentJson], { type: "application/json" });
-    const fileUrl = URL.createObjectURL(blob);
-    setJsonData(studentJson);
-    setJsonFileUrl(fileUrl);
-
-    // Now encrypt and upload to Arweave if wallet is available
-    let newStudent = { ...formData };
-
-    if (walletKey) {
+    // Validate fields
+    if (!formData.studentEmail) return;
+  
+    setIsEncrypting(true);
+  
+    try {
+      // Encrypt and Upload to Arweave FIRST
       const result = await encryptAndUploadToArweave(formData);
-
-      if (result) {
-        newStudent = {
-          ...formData,
-          transactionId: result.transactionId,
-          encryptionKey: result.encryptionKey
-        };
+  
+      if (!result?.transactionId) {
+        throw new Error("Transaction ID missing from Arweave upload");
       }
-    } else {
-      setEncryptionStatus("No Arweave wallet loaded. Student data was not encrypted or stored on blockchain.");
+  
+      const universityId = "your-university-id"; // Ideally fetched from auth context
+  
+      // Register the student with the Arweave transaction ID
+      await registerStudent(formData.studentEmail, universityId, result.transactionId);
+  
+      const studentWithKeys: Student = {
+        ...formData,
+        transactionId: result.transactionId,
+        encryptionKey: result.encryptionKey,
+      };
+  
+      setStudents([...students, studentWithKeys]);
+      setShowModal(true);
+  
+      setFormData({
+        firstName: "",
+        lastName: "",
+        studentId: "",
+        gpa: "",
+        studentEmail: "",
+        classes: [],
+      });
+    } catch (err) {
+      setEncryptionStatus("Error: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsEncrypting(false);
     }
-
-    // Add new student to the records
-    setStudents([...students, newStudent]);
-
-    // Clear the form for new input
-    setFormData({
-      firstName: "",
-      lastName: "",
-      studentId: "",
-      gpa: "",
-      studentEmail: "",
-      classes: [],
-    });
-
-    setShowModal(true);
-  } catch (error) {
-    setEncryptionStatus(`Error: ${error instanceof Error ? error.message : String(error)}`);
-  } finally {
-    setIsEncrypting(false);
-  }
-};
+  };  
 
   return (
     <div className="min-h-screen bg-white">

@@ -60,42 +60,33 @@ export async function registerUniversityRep(
 // utils/registerUser.ts - modified registerStudent function
 
 // STUDENT: Email link for password setup
-export async function registerStudent(email: string, universityId: string) {
-  console.log("📩 Starting student registration...", email, universityId);
+export async function registerStudent(email: string, universityId: string, transactionId: string) {
+  console.log("📩 Registering student with existing transactionId:", transactionId)
 
   try {
     const userExists = (await fetchSignInMethodsForEmail(auth, email)).length > 0;
     if (userExists) throw new Error("Email is already registered");
 
-    const transactionId = uuidv4();
     const universityRef = doc(db, "universities", universityId);
-    let universityDoc = await getDoc(universityRef);
+    const universityDoc = await getDoc(universityRef);
 
-    // 🔁 Fallback if university doesn't exist
     if (!universityDoc.exists()) {
-      console.warn("⚠️ University not found, creating fallback 'University of Kentucky'");
+      console.warn("⚠️ University not found, creating fallback");
       await setDoc(universityRef, {
         name: "University of Kentucky",
         createdAt: new Date(),
+        transactionId,
       });
-      universityDoc = await getDoc(universityRef);
+    } else {
+      await updateDoc(universityRef, { transactionId }); // update university with Arweave ID
     }
 
-    // ✅ Build full redirect URL with query params
-    const fullRedirectUrl =
-      (typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost:3000") +
-      `/student/register?universityId=${universityId}&transactionId=${transactionId}`;
-
     const actionCode = {
-      url: fullRedirectUrl,
-      handleCodeInApp: true,
+      ...actionCodeSettings,
+      url: `${actionCodeSettings.url}?universityId=${universityId}&transactionId=${transactionId}`,
     };
 
-    console.log("📨 Sending sign-in link...");
     await sendSignInLinkToEmail(auth, email, actionCode);
-    console.log("✅ Email sent!");
 
     if (typeof window !== "undefined") {
       localStorage.setItem("emailForSignIn", email);
@@ -110,11 +101,7 @@ export async function registerStudent(email: string, universityId: string) {
       status: "pending",
     });
 
-    await updateDoc(universityRef, {
-      transactionId,
-    });
-
-    return "Email sent! Please check your inbox to finish registration.";
+    return "Email sent!";
   } catch (err) {
     console.error("🔥 Student registration error:", err);
     throw err;
