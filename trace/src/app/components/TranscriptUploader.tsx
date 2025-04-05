@@ -20,7 +20,11 @@ interface TranscriptData {
   recentCourses: CourseInfo[];
 }
 
-const TranscriptUploader: React.FC = () => {
+interface TranscriptUploaderProps {
+  onParsed: (data: TranscriptData) => void;
+}
+
+const TranscriptUploader: React.FC<TranscriptUploaderProps> = ({ onParsed }) => {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<TranscriptData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -58,10 +62,13 @@ const TranscriptUploader: React.FC = () => {
         throw new Error('Failed to process transcript');
       }
 
-      const data = await response.json();
+      const data: TranscriptData = await response.json();
       setResult(data);
-      
-      // Generate a mock blockchain hash for demo purposes
+
+      // Notify parent
+      onParsed(data);
+
+      // Generate mock blockchain hash
       const mockHash = generateMockBlockchainHash(data);
       setHash(mockHash);
     } catch (err) {
@@ -70,19 +77,15 @@ const TranscriptUploader: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const generateMockBlockchainHash = (data: any): string => {
-    // In a real implementation, this would be a hash stored on the blockchain
-    // For demo purposes, we'll create a hash-like string
     const str = JSON.stringify(data);
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash & hash;
     }
-    
-    // Create a hex string that looks like a blockchain transaction hash
     return '0x' + Math.abs(hash).toString(16).padStart(40, '0');
   };
 
@@ -92,7 +95,7 @@ const TranscriptUploader: React.FC = () => {
       <p className="mb-4 text-black">
         Upload your transcript to extract information and generate a blockchain-verified credential.
       </p>
-      
+
       <div className="flex items-center mb-4">
         <input
           type="file"
