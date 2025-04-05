@@ -9,9 +9,12 @@ import { fetchSignInMethodsForEmail } from "firebase/auth"
 import { v4 as uuidv4 } from 'uuid'; // Install: npm install uuid @types/uuid
 
 const actionCodeSettings = {
-  url: typeof window !== "undefined" ? window.location.origin + "/student" : "http://localhost:3000/student",
+  url: typeof window !== "undefined"
+    ? window.location.origin + "/student/register"
+    : "http://localhost:3000/student/register",
   handleCodeInApp: true,
 }
+
 
 // Create a University entity and return its ID
 async function createUniversity(universityName: string, repId: string) {
@@ -58,58 +61,65 @@ export async function registerUniversityRep(
 
 // STUDENT: Email link for password setup
 export async function registerStudent(email: string, universityId: string) {
-    console.log("📩 Starting student registration...", email, universityId)
-  
-    try {
-      const userExists = (await fetchSignInMethodsForEmail(auth, email)).length > 0
-      if (userExists) throw new Error("Email is already registered")
-  
-      const transactionId = uuidv4()
-      const universityRef = doc(db, "universities", universityId)
-      let universityDoc = await getDoc(universityRef)
-  
-      // 🔁 Fallback if university doesn't exist: create a default "University of Kentucky"
-      if (!universityDoc.exists()) {
-        console.warn("⚠️ University not found, creating fallback 'University of Kentucky'")
-        await setDoc(universityRef, {
-          name: "University of Kentucky",
-          createdAt: new Date(),
-        })
-        universityDoc = await getDoc(universityRef)
-      }
-  
-      const actionCode = {
-        ...actionCodeSettings,
-        url: `${actionCodeSettings.url}?universityId=${universityId}&transactionId=${transactionId}`,
-      }
-  
-      console.log("📨 Sending sign-in link...")
-      await sendSignInLinkToEmail(auth, email, actionCode)
-      console.log("✅ Email sent!")
-  
-      if (typeof window !== "undefined") {
-        localStorage.setItem("emailForSignIn", email)
-      }
-  
-      await setDoc(doc(db, "pendingStudents", email), {
-        email,
-        type: "student",
-        universityId,
-        transactionId,
+  console.log("📩 Starting student registration...", email, universityId);
+
+  try {
+    const userExists = (await fetchSignInMethodsForEmail(auth, email)).length > 0;
+    if (userExists) throw new Error("Email is already registered");
+
+    const transactionId = uuidv4();
+    const universityRef = doc(db, "universities", universityId);
+    let universityDoc = await getDoc(universityRef);
+
+    // 🔁 Fallback if university doesn't exist
+    if (!universityDoc.exists()) {
+      console.warn("⚠️ University not found, creating fallback 'University of Kentucky'");
+      await setDoc(universityRef, {
+        name: "University of Kentucky",
         createdAt: new Date(),
-        status: "pending",
-      })
-  
-      await updateDoc(universityRef, {
-        transactionId,
-      })
-  
-      return "Email sent! Please check your inbox to finish registration."
-    } catch (err) {
-      console.error("🔥 Student registration error:", err)
-      throw err
+      });
+      universityDoc = await getDoc(universityRef);
     }
+
+    // ✅ Build full redirect URL with query params
+    const fullRedirectUrl =
+      (typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000") +
+      `/student/register?universityId=${universityId}&transactionId=${transactionId}`;
+
+    const actionCode = {
+      url: fullRedirectUrl,
+      handleCodeInApp: true,
+    };
+
+    console.log("📨 Sending sign-in link...");
+    await sendSignInLinkToEmail(auth, email, actionCode);
+    console.log("✅ Email sent!");
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("emailForSignIn", email);
+    }
+
+    await setDoc(doc(db, "pendingStudents", email), {
+      email,
+      type: "student",
+      universityId,
+      transactionId,
+      createdAt: new Date(),
+      status: "pending",
+    });
+
+    await updateDoc(universityRef, {
+      transactionId,
+    });
+
+    return "Email sent! Please check your inbox to finish registration.";
+  } catch (err) {
+    console.error("🔥 Student registration error:", err);
+    throw err;
   }
+}
 
 // COMPANY REP: Create account with password
 export async function registerCompanyRep(
