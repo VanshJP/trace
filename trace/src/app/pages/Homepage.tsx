@@ -199,93 +199,93 @@ const HomePage: React.FC = () => {
             {/* For Students */}
             <div className="flex flex-col md:flex-row items-start">
               <div className="md:w-1/3 mb-8 md:mb-0 md:pr-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">For Students</h3>
+                <h3 className="text-2xl font-bold text-black mb-4">For Students</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg text-[#000000]">Own and control your academic records</span>
+                    <span className="text-lg text-black">Own and control your academic records</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Share verified credentials instantly</span>
+                    <span className="text-lg text-black">Share verified credentials instantly</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">No more requesting transcripts from registrars</span>
+                    <span className="text-lg text-black">No more requesting transcripts from registrars</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Keep your credentials forever, without risk of loss</span>
+                    <span className="text-lg text-black">Keep your credentials forever, without risk of loss</span>
                   </li>
                 </ul>
               </div>
               
               {/* For Universities */}
               <div className="md:w-1/3 mb-8 md:mb-0 md:px-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">For Universities</h3>
+                <h3 className="text-2xl font-bold text-black mb-4">For Universities</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Reduce administrative burden and costs</span>
+                    <span className="text-lg text-black">Reduce administrative burden and costs</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Enhance credential security and trust</span>
+                    <span className="text-lg text-black">Enhance credential security and trust</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Protect against credential fraud</span>
+                    <span className="text-lg text-black">Protect against credential fraud</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Future-proof your credentialing process</span>
+                    <span className="text-lg text-black">Future-proof your credentialing process</span>
                   </li>
                 </ul>
               </div>
               
               {/* For Employers */}
               <div className="md:w-1/3 md:pl-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">For Employers</h3>
+                <h3 className="text-2xl font-bold text-black mb-4">For Employers</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Instant credential verification</span>
+                    <span className="text-lg text-black">Instant credential verification</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Eliminate fake degrees and resumes</span>
+                    <span className="text-lg text-black">Eliminate fake degrees and resumes</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Streamline hiring processes</span>
+                    <span className="text-lg text-black">Streamline hiring processes</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-[#228c22] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg">Reduce background check costs and time</span>
+                    <span className="text-lg text-black">Reduce background check costs and time</span>
                   </li>
                 </ul>
               </div>
