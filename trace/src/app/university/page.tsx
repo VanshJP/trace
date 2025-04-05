@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import TranscriptUploader from '../components/TranscriptUploader';
 
 const UniversityPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
@@ -34,32 +35,11 @@ const UniversityPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
         {/* Transcript Upload Section */}
-        <div className="bg-gray-50 p-8 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-6">Upload Transcript</h2>
-          <p className="text-base text-gray-500 mb-6">
-            Upload official student transcripts to be verified and stored securely on the blockchain.
-          </p>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
-            <div className="mt-4 flex text-sm text-gray-600 justify-center">
-              <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-[#228c22] hover:text-[#1c7a1c] focus-within:outline-none">
-                <span>Upload a file</span>
-                <input id="file-upload" name="file-upload" type="file" className="sr-only" />
-              </label>
-              <p className="pl-1">or drag and drop</p>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">PDF, DOC, DOCX up to 10MB</p>
-          </div>
-          <button className="inline-flex h-10 items-center justify-center rounded-md bg-[#228c22] px-8 text-sm font-medium text-white shadow transition-colors hover:bg-[#1c7a1c]">
-            Upload Transcript
-          </button>
+        
+        <div className="py-16 bg-white" id="verify-transcript">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <TranscriptUploader />
+                            </div>
         </div>
 
         {/* Create Student Section */}
